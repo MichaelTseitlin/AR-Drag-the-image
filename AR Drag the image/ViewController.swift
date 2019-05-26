@@ -10,8 +10,8 @@ import UIKit
 import SceneKit
 import ARKit
 
-class ViewController: UIViewController, ARSCNViewDelegate {
-
+class ViewController: UIViewController {
+    
     @IBOutlet var sceneView: ARSCNView!
     
     override func viewDidLoad() {
@@ -22,20 +22,19 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         
         // Show statistics such as fps and timing information
         sceneView.showsStatistics = true
-        
-        // Create a new scene
-        let scene = SCNScene(named: "art.scnassets/ship.scn")!
-        
-        // Set the scene to the view
-        sceneView.scene = scene
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
+        let referenceImages = ARReferenceImage.referenceImages(inGroupNamed: "AR Resources", bundle: nil)!
+        
         // Create a session configuration
         let configuration = ARWorldTrackingConfiguration()
-
+        configuration.detectionImages = referenceImages
+        configuration.maximumNumberOfTrackedImages = 2
+        configuration.planeDetection = [.horizontal, .vertical]
+        
         // Run the view's session
         sceneView.session.run(configuration)
     }
@@ -46,30 +45,50 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         // Pause the view's session
         sceneView.session.pause()
     }
+}
 
-    // MARK: - ARSCNViewDelegate
-    
-/*
-    // Override to create and configure nodes for anchors added to the view's session.
-    func renderer(_ renderer: SCNSceneRenderer, nodeFor anchor: ARAnchor) -> SCNNode? {
-        let node = SCNNode()
-     
-        return node
-    }
-*/
-    
-    func session(_ session: ARSession, didFailWithError error: Error) {
-        // Present an error message to the user
+
+// MARK: - ARSCNViewDelegate
+extension ViewController: ARSCNViewDelegate {
+    func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
         
+        var anchors = [ARImageAnchor]()
+        
+        guard let currentImageAchor = anchor as? ARImageAnchor else { return }
+        
+        anchors.append(currentImageAchor)
+        
+        let name = currentImageAchor.referenceImage.name!
+        
+        switch name {
+        case "200uah":
+            nodeAdded(node, for: currentImageAchor, pasteImage: "1000usd")
+            
+            DispatchQueue.main.async {
+                self.sceneView.session.remove(anchor: anchor)
+            }
+        case "200uahBack":
+            nodeAdded(node, for: currentImageAchor, pasteImage: "1000usdBack")
+            
+            DispatchQueue.main.async {
+                self.sceneView.session.remove(anchor: anchor)
+            }
+        default:
+            print(#line, #function, "\(anchor)")
+        }
     }
     
-    func sessionWasInterrupted(_ session: ARSession) {
-        // Inform the user that the session has been interrupted, for example, by presenting an overlay
+    func nodeAdded(_ node: SCNNode, for anchor: ARImageAnchor, pasteImage name: String) {
+        let refetenceImage = anchor.referenceImage
+        let size = refetenceImage.physicalSize
+        let plane = SCNPlane(width: 1.1 * size.width, height: 1.1 * size.height)
         
-    }
-    
-    func sessionInterruptionEnded(_ session: ARSession) {
-        // Reset tracking and/or remove existing anchors if consistent tracking is required
+        plane.firstMaterial?.diffuse.contents = UIImage(named: name)
         
+        let planeNode = SCNNode(geometry: plane)
+        
+        planeNode.eulerAngles.x = -.pi / 2
+        
+        node.addChildNode(planeNode)
     }
 }
