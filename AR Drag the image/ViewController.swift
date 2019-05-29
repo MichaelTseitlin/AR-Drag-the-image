@@ -47,6 +47,24 @@ class ViewController: UIViewController {
     }
 }
 
+// MARK: - Custom Methods
+extension ViewController {
+    
+    func nodeAdded(_ node: SCNNode, for anchor: ARImageAnchor, pasteImage name: String) {
+        let refetenceImage = anchor.referenceImage
+        let size = refetenceImage.physicalSize
+        let plane = SCNPlane(width: 1.1 * size.width, height: 1.1 * size.height)
+        
+        plane.firstMaterial?.diffuse.contents = UIImage(named: name)
+        
+        let planeNode = SCNNode(geometry: plane)
+        
+        planeNode.eulerAngles.x = -.pi / 2
+        
+        node.addChildNode(planeNode)
+    }
+    
+}
 
 // MARK: - ARSCNViewDelegate
 extension ViewController: ARSCNViewDelegate {
@@ -78,17 +96,4 @@ extension ViewController: ARSCNViewDelegate {
         }
     }
     
-    func nodeAdded(_ node: SCNNode, for anchor: ARImageAnchor, pasteImage name: String) {
-        let refetenceImage = anchor.referenceImage
-        let size = refetenceImage.physicalSize
-        let plane = SCNPlane(width: 1.1 * size.width, height: 1.1 * size.height)
-        
-        plane.firstMaterial?.diffuse.contents = UIImage(named: name)
-        
-        let planeNode = SCNNode(geometry: plane)
-        
-        planeNode.eulerAngles.x = -.pi / 2
-        
-        node.addChildNode(planeNode)
-    }
 }
